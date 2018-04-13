@@ -1,0 +1,68 @@
+#ifndef POSITIONMANAGER_CRISP_GEN
+#define POSITIONMANAGER_CRISP_GEN
+
+
+#pragma require "openrobots-idl >= 1.1"
+
+#include "or/time/time.idl"
+#include "infuse-genom3-types/asn1/bitstream.idl"
+
+native Crisp_genom;
+
+component crisp_genom {
+    version "0.1";
+    lang "c";
+    email "pierre.narvor@laas.fr";
+    require "genom3 >= 2.99.26";
+    codels-require "eigen3 asn1-infuse-types envire_core urdfdom"; 
+
+
+    port multiple in asn1::bitstream jointPoseInput;
+
+    struct portinfo_s
+    {
+        string<512> name;
+        or::time::ts last;
+    };
+    //exception e_sys {short code; string<128> what; };
+
+    ids
+    {
+        sequence<portinfo_s> portInfos;
+        boolean isReady;
+        
+        Crisp_genom crisp;
+    };
+
+    function load_from_file(in string<512> path = : "path to urdf file")
+    {
+        doc "load robot model from urdf file. Has to be called once to start codel execution";
+        
+        codel load_from_file(in path, out ::ids);
+    };
+
+    function toggle_leaf(in string<512> leaf = : "name of leaf")
+    {
+        doc "toggle the export of a particular leaf pose";
+
+        codel toggle_leaf(in leaf, out ::ids);
+    };
+
+
+    task update_internal_tree
+    {
+        doc "keep internal robot transform tree up to date";
+        priority 100;
+        stack 64k;
+        period 10ms;
+
+        codel <start> uit_init(out ::ids) yield waitloading;
+        codel <waitloading> uit_wait_loading(in ::ids) yield waitloading, readjoints;
+        codel <readjoints> uit_read_joints_publications(in jointPoseInput, out ::ids) yield pause::readjoints;
+        codel <stop> uit_stop(out ::ids) yield ether;
+    };
+
+
+};
+
+#endif

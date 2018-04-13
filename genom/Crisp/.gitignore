@@ -1,0 +1,10 @@
+build
+.*.sw*
+Makefile*
+aclocal.m4
+auto*
+README.adoc
+configure*
+*.pc.in
+bootstrap.sh
+
