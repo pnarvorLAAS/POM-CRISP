@@ -1,11 +1,11 @@
 #ifndef POSITIONMANAGER_CRISP_GEN
 #define POSITIONMANAGER_CRISP_GEN
 
-
+#pragma require "infuse_types-genom3 >= 0.1"
 #pragma require "openrobots-idl >= 1.1"
 
 #include "or/time/time.idl"
-#include "infuse-genom3-types/asn1/bitstream.idl"
+#include "infuse_types/asn1/bitstream.idl"
 
 native Crisp_genom;
 
