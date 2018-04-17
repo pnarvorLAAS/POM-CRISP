@@ -138,6 +138,8 @@ int UrdfParser::extractCovariances(const string& xmlStr, map<string,Covariance>&
         }
         jointCovariances[string(jointXml->Attribute("name"))] = cov;
 	}
+
+    return 1;
 }
 
 int UrdfParser::parseCovarianceString(const char* strIn, Covariance& cov)
@@ -146,9 +148,9 @@ int UrdfParser::parseCovarianceString(const char* strIn, Covariance& cov)
     string str(strIn);
     str = str + " ";
 
-    for(int i = 0; i < str.size(); i++)
+    for(unsigned int i = 0; i < str.size(); i++)
     {
-        if(str[i] >= '0' && str[i] <= '9' || str[i] == '.' || str[i] == '-' || str[i] == 'e')
+        if((str[i] >= '0' && str[i] <= '9') || str[i] == '.' || str[i] == '-' || str[i] == 'e')
             continue;
         else
             str[i] = ' ';
