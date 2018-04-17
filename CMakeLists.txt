@@ -21,5 +21,5 @@ SET(DEPENDENCIES "envire_core urdfdom cdff_types")
 SET(HEADERS_DIR "include")
 configure_file(${CMAKE_SOURCE_DIR}/template.pc.in ${CMAKE_BINARY_DIR}/pkgconfig/${LIBRARY_NAME}.pc @ONLY) 
 
-
+add_subdirectory(genom3)
 
