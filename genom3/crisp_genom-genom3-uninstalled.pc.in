@@ -1,0 +1,11 @@
+# pkg-config file for uninstalled crisp_genom interface and codels library
+#
+prefix=@abs_top_builddir@
+libdir=${prefix}/codels
+includedir=${prefix}/codels
+
+Name: crisp_genom-genom3
+Description: crisp_genom interface and codels library
+Version: @PACKAGE_VERSION@
+Requires: openrobots-idl >= 1.1, genom3 >= 2.99.26, crisp-asn1 crisp asn1_pom_conversions cdff_types pom-base
+Libs: ${libdir}/libcrisp_genom_codels.la

@@ -14,7 +14,7 @@ component crisp_genom {
     lang "c";
     email "pierre.narvor@laas.fr";
     require "genom3 >= 2.99.26";
-    codels-require "eigen3 asn1-infuse-types envire_core urdfdom"; 
+    codels-require "crisp-asn1 crisp asn1_pom_conversions cdff_types pom-base"; 
 
 
     port multiple in asn1::bitstream jointPoseInput;
