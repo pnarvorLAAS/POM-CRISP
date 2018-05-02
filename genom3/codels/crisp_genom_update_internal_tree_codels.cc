@@ -72,12 +72,15 @@ uit_read_joints_publications(const crisp_genom_jointPoseInput *jointPoseInput,
         }
 
         //This section is to not read several time the same pose
-        if(gbstream->currentByte == -1)
+        //if(gbstream->currentByte == -1)
+        //    continue;
+        //gbstream->currentByte = -1;
+        if(gbstream->header.stamp.nsec == UINT32_MAX)
             continue;
-        gbstream->currentByte = -1;
+        gbstream->header.stamp.nsec == UINT32_MAX;
         
-        bstream.buf = gbstream->buf._buffer;
-        bstream.count = gbstream->count;
+        bstream.buf = gbstream->data._buffer;
+        bstream.count = PoseDoubleStamped_REQUIRED_BYTES_FOR_ENCODING;
         bstream.currentByte = 0;
         bstream.currentBit = 0;
 
