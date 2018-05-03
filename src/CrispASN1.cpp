@@ -6,7 +6,7 @@ using namespace PositionManager;
 CrispASN1::CrispASN1()
 {}
 
-int CrispASN1::updateJointPose(const Pose_Infuse& asnPose)
+int CrispASN1::updateJointPose(const Pose_InFuse& asnPose)
 {
     PositionManager::Pose pose;
    
@@ -19,12 +19,12 @@ int CrispASN1::updateJointPose(const Pose_Infuse& asnPose)
 
 int CrispASN1::updateJointPose(BitStream bstream)
 {
-    Pose_Infuse asnPose;
+    Pose_InFuse asnPose;
     flag res;
     int errorCode;
 
-    BitStream_Init(&bstream, bstream.buf, Pose_Infuse_REQUIRED_BYTES_FOR_ENCODING);
-    res = PoseDoubleStamped_Decode(&asnPose, &bstream, &errorCode);
+    BitStream_Init(&bstream, bstream.buf, Pose_InFuse_REQUIRED_BYTES_FOR_ENCODING);
+    res = Pose_InFuse_Decode(&asnPose, &bstream, &errorCode);
     if(!res)
     {
         cout << "error CrispASN1 : decoding error : " << errorCode << endl;

@@ -15,7 +15,7 @@ class CrispASN1 : public Crisp
     CrispASN1();
 
     using Crisp::updateJointPose;
-    int updateJointPose(const Pose_Infuse& pose); 
+    int updateJointPose(const Pose_InFuse& pose); 
     int updateJointPose(BitStream bstream);
 };
 

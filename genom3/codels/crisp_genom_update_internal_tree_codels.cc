@@ -80,7 +80,7 @@ uit_read_joints_publications(const crisp_genom_jointPoseInput *jointPoseInput,
         gbstream->header.stamp.nsec == UINT32_MAX;
         
         bstream.buf = gbstream->data._buffer;
-        bstream.count = Pose_Infuse_REQUIRED_BYTES_FOR_ENCODING;
+        bstream.count = Pose_InFuse_REQUIRED_BYTES_FOR_ENCODING;
         bstream.currentByte = 0;
         bstream.currentBit = 0;
 
