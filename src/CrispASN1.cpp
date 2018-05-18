@@ -23,7 +23,8 @@ int CrispASN1::updateJointPose(BitStream bstream)
     flag res;
     int errorCode;
 
-    BitStream_Init(&bstream, bstream.buf, Pose_InFuse_REQUIRED_BYTES_FOR_ENCODING);
+    bstream.currentByte = 0;
+    bstream.currentBit = 0;
     res = Pose_InFuse_Decode(&asnPose, &bstream, &errorCode);
     if(!res)
     {
