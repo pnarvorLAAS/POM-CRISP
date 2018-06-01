@@ -2,11 +2,10 @@ cmake_minimum_required (VERSION 3.0)
 project (crisp VERSION 0.1)
 
 set(SOURCES 
-    src/UrdfParser.cpp
     src/Crisp.cpp)
 set(HEADERS
     include/UrdfParser.hpp
-    include/Crisp.hpp)
+)
 
 set(LIBRARY_NAME crisp)
 add_library(${LIBRARY_NAME} ${SOURCES})
