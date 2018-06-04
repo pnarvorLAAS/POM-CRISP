@@ -9,7 +9,7 @@ set(HEADERS
 
 set(LIBRARY_NAME crisp)
 add_library(${LIBRARY_NAME} ${SOURCES})
-target_link_libraries(${LIBRARY_NAME} ${ENVIRE_LIBRARIES} ${urdfdom_LIBRARIES})
+target_link_libraries(${LIBRARY_NAME} ${ENVIRE_LIBRARIES} ${urdfdom_LIBRARIES} pom-base)
 add_dependencies(${LIBRARY_NAME} pom-base)
 SET(DEPENDENCIES "envire_core urdfdom pom-base")
 SET(HEADERS_DIR "include")
@@ -25,8 +25,8 @@ set(SOURCES
 set(HEADERS
     include/CrispASN1.hpp)
 set(LIBRARY_NAME crisp-asn1)
-add_library(${LIBRARY_NAME} ${SOURCES})
-target_link_libraries(${LIBRARY_NAME} ${ENVIRE_LIBRARIES} ${urdfdom_LIBRARIES})
+add_library(${LIBRARY_NAME} src/CrispASN1.cpp)
+target_link_libraries(${LIBRARY_NAME} ${ENVIRE_LIBRARIES} ${urdfdom_LIBRARIES} pom-base)
 add_dependencies(${LIBRARY_NAME} crisp cdff_types asn1_pom_conversions pom-base)
 SET(DEPENDENCIES "crisp asn1_pom_conversions")
 SET(HEADERS_DIR "include")
