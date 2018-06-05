@@ -4,7 +4,7 @@ project (crisp VERSION 0.1)
 set(SOURCES 
     src/Crisp.cpp)
 set(HEADERS
-    include/UrdfParser.hpp
+    include/Crisp.hpp
 )
 
 set(LIBRARY_NAME crisp)
