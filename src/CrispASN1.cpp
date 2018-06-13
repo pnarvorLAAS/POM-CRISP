@@ -34,3 +34,22 @@ int CrispASN1::updateJointPose(BitStream bstream)
     return this->updateJointPose(asnPose);
 }
 
+int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream)
+{
+    PositionManager::Pose pose;
+    Pose_InFuse asnPose;
+    int errorCode;
+    flag res;
+
+    if(!this->getLeafPose(frameId, pose))
+        return 0;
+    toASN1SCC(pose, asnPose);
+
+    BitStream_Init(&bstream, bstream.buf, Pose_InFuse_REQUIRED_BYTES_FOR_ENCODING);
+    res = Pose_InFuse_Encode(&asnPose, &bstream, &errorCode, TRUE);
+    if(!res)
+        return 0;
+
+    return 1;
+}
+

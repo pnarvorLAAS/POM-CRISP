@@ -78,7 +78,6 @@ int Crisp::updateJointPose(const Pose& pose)
     }
     this->unlockGraph();
    
-    //cout << "Crisp updated with : " << pose.toString() << endl << endl;
     return 1;
 }
 
@@ -118,7 +117,7 @@ int Crisp::copyRobotGraph(Graph& dest)
     return 1;
 }
 
-int Crisp::getLeafPose(FrameId leaf, Pose& pose)
+int Crisp::getLeafPose(const FrameId leaf, Pose& pose)
 {
     return this->getPose(_robotBaseFrameId, leaf, pose);
 }
@@ -126,6 +125,11 @@ int Crisp::getLeafPose(FrameId leaf, Pose& pose)
 int Crisp::getLeavesCount()
 {
     return _leaves.size();
+}
+
+vector<FrameId> Crisp::getLeavesNames()
+{
+    return _leaves;
 }
 
 int Crisp::getActiveLeavesCount()
@@ -140,21 +144,37 @@ int Crisp::getActiveLeavesCount()
     return count;
 }
 
-int Crisp::getActiveLeavesPoses(std::vector<PositionManager::Pose>& poses)
+vector<FrameId> Crisp::getActiveLeavesNames()
 {
-    int count = this->getActiveLeavesCount();
+    vector<FrameId> names(this->getActiveLeavesCount());
     int j = 0;
 
-    //cout << "ActiveLeaves count : " << to_string(count) << endl;
-    poses.resize(count);
     for(unsigned int i = 0; i < _leaves.size(); i++)
     {
         if(_leavesActiveState[i])
         {
-            this->getLeafPose(_leaves[i], poses[j]);
+            names[j] = _leaves[i];
             j++;
-            if(j == count)
-                break;
+        }
+    }
+
+    return names;
+}
+
+int Crisp::getActiveLeavesPoses(std::map<FrameId, Pose>& poses)
+{
+    int count = this->getActiveLeavesCount();
+    Pose pTmp;
+    poses.clear();
+
+    //cout << "ActiveLeaves count : " << to_string(count) << endl;
+    for(unsigned int i = 0; i < _leaves.size(); i++)
+    {
+        if(_leavesActiveState[i])
+        {
+            if(!this->getLeafPose(_leaves[i], pTmp))
+                continue;
+            poses.insert(pair<FrameId, Pose>(_leaves[i], pTmp));
         }
     }
 

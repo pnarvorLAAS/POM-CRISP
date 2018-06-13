@@ -5,6 +5,9 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <map>
+#include <vector>
+#include <utility>
 
 #include <PositionManagerBase.hpp>
 #include "UrdfParser.hpp"
@@ -29,8 +32,10 @@ class Crisp
     // Members dedicated to leaves (= ends of robot graph, usually sensors or actuators)
     int getLeafPose(const PositionManager::FrameId leaf, PositionManager::Pose& pose);
     int getLeavesCount();
+    std::vector<PositionManager::FrameId> getLeavesNames();
     int getActiveLeavesCount();
-    int getActiveLeavesPoses(std::vector<PositionManager::Pose>& poses);
+    std::vector<PositionManager::FrameId> getActiveLeavesNames();
+    int getActiveLeavesPoses(std::map<PositionManager::FrameId, PositionManager::Pose>& poses);
     int toggleLeafState(PositionManager::FrameId leaf);
     PositionManager::FrameId getRobotBaseFrameId();
 
