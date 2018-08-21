@@ -1,0 +1,16 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+sharedlibdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: @PROJECT_NAME@
+Description: ASN.1 types for the InFuse project generated in C
+Version: @PROJECT_VERSION@
+
+Requires:
+Requires.private:
+Conflicts: 
+Cflags: -I${includedir}
+Libs: -L${libdir} -L${sharedlibdir} -l@PROJECT_NAME@
+Libs.private: 
