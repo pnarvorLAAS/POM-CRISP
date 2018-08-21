@@ -1,4 +1,4 @@
-#include "CrispASN1.hpp"
+#include <infuse_pom_crisp/CrispASN1.hpp>
 
 using namespace std;
 using namespace PositionManager;
@@ -6,7 +6,7 @@ using namespace PositionManager;
 CrispASN1::CrispASN1()
 {}
 
-int CrispASN1::updateJointPose(const Pose_InFuse& asnPose)
+int CrispASN1::updateJointPose(const asn1SccTransformWithCovariance& asnPose)
 {
     PositionManager::Pose pose;
    
@@ -19,13 +19,13 @@ int CrispASN1::updateJointPose(const Pose_InFuse& asnPose)
 
 int CrispASN1::updateJointPose(BitStream bstream)
 {
-    Pose_InFuse asnPose;
+    asn1SccTransformWithCovariance asnPose;
     flag res;
     int errorCode;
 
     bstream.currentByte = 0;
     bstream.currentBit = 0;
-    res = Pose_InFuse_Decode(&asnPose, &bstream, &errorCode);
+    res = asn1SccTransformWithCovariance_Decode(&asnPose, &bstream, &errorCode);
     if(!res)
     {
         cout << "error CrispASN1 : decoding error : " << errorCode << endl;
@@ -37,7 +37,7 @@ int CrispASN1::updateJointPose(BitStream bstream)
 int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream)
 {
     PositionManager::Pose pose;
-    Pose_InFuse asnPose;
+    asn1SccTransformWithCovariance asnPose;
     int errorCode;
     flag res;
 
@@ -45,8 +45,8 @@ int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bs
         return 0;
     toASN1SCC(pose, asnPose);
 
-    BitStream_Init(&bstream, bstream.buf, Pose_InFuse_REQUIRED_BYTES_FOR_ENCODING);
-    res = Pose_InFuse_Encode(&asnPose, &bstream, &errorCode, TRUE);
+    BitStream_Init(&bstream, bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
+    res = asn1SccTransformWithCovariance_Encode(&asnPose, &bstream, &errorCode, TRUE);
     if(!res)
         return 0;
 
