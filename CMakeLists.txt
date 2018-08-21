@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.0)
 project(infuse_pom_crisp VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 11)
+set(PKG_DESCRIPTION "CRISP: Common Robot Internal State Publisher")
 
 ###
 # Imports infuse_pom_base dependencies
@@ -54,6 +55,8 @@ if (WITH_ASN1)
             PUBLIC_HEADER "${HEADERS}"
     )
 
+    set(REQUIRED_COMPONENTS "infuse_envire, infuse_pom_base, infuse_asn1_conversions_pom")
+
 ###
 # Else
 
@@ -77,6 +80,8 @@ else()
             OUTPUT_NAME ${PROJECT_NAME}
             PUBLIC_HEADER "${HEADERS}"
     )
+    
+    set(REQUIRED_COMPONENTS "infuse_envire, infuse_pom_base")
     
 
 endif(WITH_ASN1)
