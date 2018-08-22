@@ -12,18 +12,13 @@ set(PKG_DESCRIPTION "CRISP: Common Robot Internal State Publisher")
 ###
 # Imports infuse_pom_base dependencies
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(ENVIRE REQUIRED infuse_envire)
 find_package(infuse_pom_base REQUIRED )
 
-include_directories(
-    include/
-    ${ENVIRE_INCLUDE_DIRS}
-    ${infuse_pom_base_INCLUDE_DIR}
-)
+#get_property(pom_base_link TARGET infuse_pom_base PROPERTY INTERFACE_LINK_LIBRARIES)
+#get_property(pom_base_include TARGET infuse_pom_base PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+#message(STATUS "pom_base Link: ${pom_base_link}")
+#message(STATUS "pom_base Include: ${pom_base_include}")
 
-
-link_directories(${ENVIRE_LIBRARY_DIRS})
 
 ###
 # Define options
@@ -32,8 +27,14 @@ option (WITH_ASN1 "Compile the ASN.1 Wrapper of pom-crisp" TRUE)
 ####
 # If the ASN.1 wrapper is enabled
 if (WITH_ASN1)
-    find_package(infuse_asn1_conversions REQUIRED )
-    include_directories(${infuse_asn1_conversions_INCLUDE_DIRS})
+    find_package(infuse_asn1_conversions REQUIRED)
+    #include_directories(${infuse_asn1_conversions_INCLUDE_DIR})
+#    get_property(conversions_link TARGET infuse_asn1_conversions::pom_conversions PROPERTY INTERFACE_LINK_LIBRARIES)
+#    get_property(conversions_include TARGET infuse_asn1_conversions::pom_conversions PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+#
+#    message(STATUS "conversions Link: ${conversions_link}")
+#    message(STATUS "conversions Include: ${conversions_include}")
+
 
     set(SOURCES 
         src/Crisp.cpp
@@ -47,7 +48,8 @@ if (WITH_ASN1)
     
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
     
-    target_link_libraries (${PROJECT_NAME} infuse_envire infuse_pom_base infuse_asn1_conversions_pom)
+    target_link_libraries (${PROJECT_NAME} infuse_pom_base infuse_asn1_conversions::pom_conversions)
+    target_include_directories(${PROJECT_NAME} PRIVATE include/)
     set_target_properties (${PROJECT_NAME}
         PROPERTIES
             VERSION ${PROJECT_VERSION}
@@ -55,7 +57,7 @@ if (WITH_ASN1)
             PUBLIC_HEADER "${HEADERS}"
     )
 
-    set(REQUIRED_COMPONENTS "infuse_envire, infuse_pom_base, infuse_asn1_conversions_pom")
+    set(REQUIRED_COMPONENTS "infuse_pom_base, infuse_asn1_conversions::conversions_pom")
 
 ###
 # Else
