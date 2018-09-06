@@ -17,7 +17,8 @@ namespace PositionManager
 
 struct FrameIdPair
 {
-    FrameIdPair(FrameId p = FrameId("parent"), FrameId c = FrameId("child")) :
+    FrameIdPair(PositionManager::FrameId p = PositionManager::FrameId("parent"),
+                PositionManager::FrameId c = PositionManager::FrameId("child")) :
         parent(p), child(c) {}
 
     PositionManager::FrameId parent;
@@ -37,23 +38,27 @@ class Crisp
     // Only member function able to directly write/read in the graph transforms. (lock the mutex)
     int fromURDF(std::string filename); 
     int updateJointPose(const PositionManager::Pose& pose);
-    int getPose(const PositionManager::FrameId& parent, const PositionManager::FrameId& child, PositionManager::Pose& pose);
+    int getPose(const PositionManager::FrameId& parent,
+                const PositionManager::FrameId& child, PositionManager::Pose& pose);
     int copyRobotGraph(PositionManager::Graph& dest);
-    bool containsPose(const FrameId& parent, const FrameId& child);
+    bool containsPose(const PositionManager::FrameId& parent,
+                      const PositionManager::FrameId& child);
 
     // Members allocated to poses to export
     int getExportedPosesCount();
     std::vector<std::string> getExportedPosesIds();
     int getExportedPoses(std::vector<PositionManager::Pose>& poses);
-    bool addPoseToExport(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
-    bool removePoseFromExport(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
+    bool addPoseToExport(const PositionManager::FrameId& parent,
+                         const PositionManager::FrameId& child);
+    bool removePoseFromExport(const PositionManager::FrameId& parent,
+                              const PositionManager::FrameId& child);
 
     // Members dedicated to leaves (= ends of robot graph, usually sensors or actuators)
     int getLeafPose(const PositionManager::FrameId leaf, PositionManager::Pose& pose);
     int getLeavesCount();
     std::vector<PositionManager::FrameId> getLeavesFrameIds();
-    bool addLeafToExport(const FrameId& leaf);
-    bool removeLeafFromExport(const FrameId& leaf);
+    bool addLeafToExport(const PositionManager::FrameId& leaf);
+    bool removeLeafFromExport(const PositionManager::FrameId& leaf);
     void addLeavesToExport();
 
     PositionManager::FrameId getRobotBaseFrameId();
