@@ -5,6 +5,16 @@
 using namespace std;
 using namespace PositionManager;
 
+string getFrameIdPairString(const Pose& pose)
+{
+    return getFrameIdPairString(pose._parent, pose._child);
+}
+
+string getFrameIdPairString(const FrameId& parent, const FrameId& child)
+{
+    return parent + "->" + child;
+}
+
 Crisp::Crisp()
 {
     _robotBaseFrameId = "RobotBase";
@@ -45,18 +55,17 @@ int Crisp::fromURDF(string urdfFilename)
     cout << "Checking leaf nodes... ";
     list<FrameId> leavesList = _robotGraph.getLeaves(&this->_robotBaseFrameId);
     _leaves.resize(leavesList.size());
-    _leavesActiveState.resize(_leaves.size());
     cout << to_string(_leaves.size()) << " leaves found : " << endl;
     int i = 0;
     for(list<FrameId>::iterator it = leavesList.begin(); it != leavesList.end(); it++)
     {
         _leaves[i] = *it;
-        //_leavesActiveState[i] = true;
-        _leavesActiveState[i] = false;
         cout << _leaves[i] << endl;
         i++;
     }
     cout << "Done.\n" << endl;
+
+    this->addLeavesToExport();
 
     unlockGraph();
     return 1;
@@ -108,6 +117,17 @@ int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose)
     return 1;
 }
 
+bool Crisp::containsPose(const FrameId& parent, const FrameId& child)
+{
+    bool res = false;
+
+    this->lockGraph();
+    res = _robotGraph.containsEdge(parent, child);
+    this->unlockGraph();
+
+    return res;
+}
+
 int Crisp::copyRobotGraph(Graph& dest)
 {
     this->lockGraph();
@@ -127,77 +147,84 @@ int Crisp::getLeavesCount()
     return _leaves.size();
 }
 
-vector<FrameId> Crisp::getLeavesNames()
+vector<FrameId> Crisp::getLeavesFrameIds()
 {
     return _leaves;
 }
 
-int Crisp::getActiveLeavesCount()
+bool Crisp::addLeafToExport(const FrameId& leaf)
 {
-    int count = 0;
-    for(unsigned int i = 0; i < _leavesActiveState.size(); i++)
-    {
-        if(_leavesActiveState[i])
-            count++;
-    }
+    if(!this->containsPose(_robotBaseFrameId, leaf))
+        return false;
 
-    return count;
+    _exportedPoses.insert(std::pair<string, FrameIdPair>(leaf, FrameIdPair(_robotBaseFrameId, leaf)));
+
+    return true;
 }
 
-vector<FrameId> Crisp::getActiveLeavesNames()
+bool Crisp::removeLeafFromExport(const FrameId& leaf)
 {
-    vector<FrameId> names(this->getActiveLeavesCount());
-    int j = 0;
+    if(!_exportedPoses.erase(leaf))
+        return false;
+    return true;
+}
 
-    for(unsigned int i = 0; i < _leaves.size(); i++)
+void Crisp::addLeavesToExport()
+{
+    for(int i = 0; i < _leaves.size(); i++)
+        this->addLeafToExport(_leaves[i]);
+}
+
+int Crisp::getExportedPosesCount()
+{
+    return _exportedPoses.size();
+}
+
+vector<string> Crisp::getExportedPosesIds()
+{
+    vector<FrameId> names(this->getExportedPosesCount());
+    int i = 0;
+
+    for(map<string, FrameIdPair>::iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
     {
-        if(_leavesActiveState[i])
-        {
-            names[j] = _leaves[i];
-            j++;
-        }
+        names[i] = it->first;
+        i++;
     }
 
     return names;
 }
 
-int Crisp::getActiveLeavesPoses(std::map<FrameId, Pose>& poses)
+int Crisp::getExportedPoses(vector<Pose>& poses)
 {
-    int count = this->getActiveLeavesCount();
-    Pose pTmp;
-    poses.clear();
+    int count = this->getExportedPosesCount();
+    poses.resize(count);
 
-    //cout << "ActiveLeaves count : " << to_string(count) << endl;
-    for(unsigned int i = 0; i < _leaves.size(); i++)
+    //cout << "Exported poses count : " << to_string(count) << endl;
+    int i = 0;
+    for(map<string, FrameIdPair>::iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
     {
-        if(_leavesActiveState[i])
-        {
-            if(!this->getLeafPose(_leaves[i], pTmp))
-                continue;
-            poses.insert(pair<FrameId, Pose>(_leaves[i], pTmp));
-        }
+        this->getPose(it->second.parent, it->second.child, poses[i]);
+        i++;
     }
 
     return count;
 }
 
-int Crisp::toggleLeafState(PositionManager::FrameId leaf)
+bool Crisp::addPoseToExport(const FrameId& parent, const FrameId& child)
 {
-    for(unsigned int i = 0; i < _leavesActiveState.size(); i++)
-    {
-        if(_leaves[i] == leaf)
-        {
-            if(_leavesActiveState[i])
-                _leavesActiveState[i] = false;
-            else
-                _leavesActiveState[i] = true;
+    if(!this->containsPose(parent, child))
+        return false;
 
-            return 1;
-        }
-    }
+    _exportedPoses.insert(std::pair<string, FrameIdPair>(getFrameIdPairString(parent, child), FrameIdPair(parent, child)));
 
-    cout << "Error, Crisp : Leaf \" " << leaf << "\" does not exist" << endl;
-    return 0;
+    return true;
+}
+
+bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
+{
+    if(!_exportedPoses.erase(getFrameIdPairString(parent, child)))
+        return false;
+    return true;
 }
 
 FrameId Crisp::getRobotBaseFrameId()
