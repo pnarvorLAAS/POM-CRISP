@@ -39,32 +39,32 @@ class Crisp
     int fromURDF(std::string filename); 
     int updateJointPose(const PositionManager::Pose& pose);
     int getPose(const PositionManager::FrameId& parent,
-                const PositionManager::FrameId& child, PositionManager::Pose& pose);
+                const PositionManager::FrameId& child, PositionManager::Pose& pose) const;
     int copyRobotGraph(PositionManager::Graph& dest);
     bool containsPose(const PositionManager::FrameId& parent,
-                      const PositionManager::FrameId& child);
+                      const PositionManager::FrameId& child) const;
 
     // Members allocated to poses to export
-    int getExportedPosesCount();
-    std::vector<std::string> getExportedPosesIds();
-    int getExportedPoses(std::vector<PositionManager::Pose>& poses);
+    int getExportedPosesCount() const;
+    std::vector<std::string> getExportedPosesIds() const;
+    int getExportedPoses(std::vector<PositionManager::Pose>& poses) const;
     bool addPoseToExport(const PositionManager::FrameId& parent,
                          const PositionManager::FrameId& child);
     bool removePoseFromExport(const PositionManager::FrameId& parent,
                               const PositionManager::FrameId& child);
 
     // Members dedicated to leaves (= ends of robot graph, usually sensors or actuators)
-    int getLeafPose(const PositionManager::FrameId leaf, PositionManager::Pose& pose);
-    int getLeavesCount();
-    std::vector<PositionManager::FrameId> getLeavesFrameIds();
+    int getLeafPose(const PositionManager::FrameId leaf, PositionManager::Pose& pose) const;
+    int getLeavesCount() const;
+    std::vector<PositionManager::FrameId> getLeavesFrameIds() const;
     bool addLeafToExport(const PositionManager::FrameId& leaf);
     bool removeLeafFromExport(const PositionManager::FrameId& leaf);
     void addLeavesToExport();
 
-    PositionManager::FrameId getRobotBaseFrameId();
+    PositionManager::FrameId getRobotBaseFrameId() const;
 
-    JointMap& getMovableJoints();
-    int getMovableJointsCount();
+    JointMap getMovableJoints() const;
+    int getMovableJointsCount() const;
 
     //TO BE REMOVED NOT THREAD SAFE. DO NOT USE IF NOT NECESSARY
     std::shared_ptr<envire::core::EnvireGraph> getRobotGraph();
@@ -80,9 +80,9 @@ class Crisp
     JointMap _movableJoints;
 
     // grab and release mutex, wrapped for convenience
-    void lockGraph();
-    void unlockGraph();
-    std::mutex _graphAccessMutex;
+    void lockGraph() const; 
+    void unlockGraph() const;
+    mutable std::mutex _graphAccessMutex;
 };
 
 };

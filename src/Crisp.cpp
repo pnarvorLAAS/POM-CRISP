@@ -90,7 +90,7 @@ int Crisp::updateJointPose(const Pose& pose)
     return 1;
 }
 
-int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose)
+int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose) const
 {
     TimeUs tval;
     // TODO Handle generic Exception
@@ -117,7 +117,7 @@ int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose)
     return 1;
 }
 
-bool Crisp::containsPose(const FrameId& parent, const FrameId& child)
+bool Crisp::containsPose(const FrameId& parent, const FrameId& child) const
 {
     bool res = false;
 
@@ -137,17 +137,17 @@ int Crisp::copyRobotGraph(Graph& dest)
     return 1;
 }
 
-int Crisp::getLeafPose(const FrameId leaf, Pose& pose)
+int Crisp::getLeafPose(const FrameId leaf, Pose& pose) const
 {
     return this->getPose(_robotBaseFrameId, leaf, pose);
 }
 
-int Crisp::getLeavesCount()
+int Crisp::getLeavesCount() const
 {
     return _leaves.size();
 }
 
-vector<FrameId> Crisp::getLeavesFrameIds()
+vector<FrameId> Crisp::getLeavesFrameIds() const
 {
     return _leaves;
 }
@@ -175,17 +175,17 @@ void Crisp::addLeavesToExport()
         this->addLeafToExport(_leaves[i]);
 }
 
-int Crisp::getExportedPosesCount()
+int Crisp::getExportedPosesCount() const
 {
     return _exportedPoses.size();
 }
 
-vector<string> Crisp::getExportedPosesIds()
+vector<string> Crisp::getExportedPosesIds() const
 {
     vector<FrameId> names(this->getExportedPosesCount());
     int i = 0;
 
-    for(map<string, FrameIdPair>::iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
+    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
     {
         names[i] = it->first;
         i++;
@@ -194,14 +194,14 @@ vector<string> Crisp::getExportedPosesIds()
     return names;
 }
 
-int Crisp::getExportedPoses(vector<Pose>& poses)
+int Crisp::getExportedPoses(vector<Pose>& poses) const
 {
     int count = this->getExportedPosesCount();
     poses.resize(count);
 
     //cout << "Exported poses count : " << to_string(count) << endl;
     int i = 0;
-    for(map<string, FrameIdPair>::iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
+    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
     {
         this->getPose(it->second.parent, it->second.child, poses[i]);
         i++;
@@ -227,17 +227,17 @@ bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
     return true;
 }
 
-FrameId Crisp::getRobotBaseFrameId()
+FrameId Crisp::getRobotBaseFrameId() const
 {
     return this->_robotBaseFrameId;
 }
 
-JointMap& Crisp::getMovableJoints()
+JointMap Crisp::getMovableJoints() const
 {
     return _movableJoints;
 }
 
-int Crisp::getMovableJointsCount()
+int Crisp::getMovableJointsCount() const
 {
     return _movableJoints.size();
 }
@@ -248,12 +248,12 @@ shared_ptr<envire::core::EnvireGraph> Crisp::getRobotGraph()
     return shared_ptr<envire::core::EnvireGraph>(&_robotGraph, [](envire::core::EnvireGraph*){});
 }
 
-inline void Crisp::lockGraph()
+inline void Crisp::lockGraph() const
 {
     _graphAccessMutex.lock();
 }
 
-inline void Crisp::unlockGraph()
+inline void Crisp::unlockGraph() const
 {
     _graphAccessMutex.unlock();
 }
