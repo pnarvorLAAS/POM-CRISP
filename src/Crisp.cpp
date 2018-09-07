@@ -137,6 +137,75 @@ int Crisp::copyRobotGraph(Graph& dest)
     return 1;
 }
 
+int Crisp::getExportedPosesCount() const
+{
+    return _exportedPoses.size();
+}
+
+vector<PoseId> Crisp::getExportedPosesIds() const
+{
+    vector<FrameId> names(this->getExportedPosesCount());
+    int i = 0;
+
+    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
+    {
+        names[i] = it->first;
+        i++;
+    }
+
+    return names;
+}
+
+bool Crisp::getExportedPose(PositionManager::PoseId poseId, PositionManager::Pose& pose) const
+{
+    FrameIdPair pair; 
+
+    try
+    {
+        pair = _exportedPoses.at(poseId);
+    }
+    catch(exception e)
+    {
+        return false;
+    }
+    this->getPose(pair.parent, pair.child, pose);
+    
+    return true;
+}
+
+int Crisp::getExportedPoses(vector<Pose>& poses) const
+{
+    int count = this->getExportedPosesCount();
+    poses.resize(count);
+
+    //cout << "Exported poses count : " << to_string(count) << endl;
+    int i = 0;
+    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
+    {
+        this->getPose(it->second.parent, it->second.child, poses[i]);
+        i++;
+    }
+
+    return count;
+}
+
+bool Crisp::addPoseToExport(const FrameId& parent, const FrameId& child)
+{
+    if(!this->containsPose(parent, child))
+        return false;
+
+    _exportedPoses.insert(std::pair<string, FrameIdPair>(getFrameIdPairString(parent, child), FrameIdPair(parent, child)));
+
+    return true;
+}
+
+bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
+{
+    if(!_exportedPoses.erase(getFrameIdPairString(parent, child)))
+        return false;
+    return true;
+}
+
 int Crisp::getLeafPose(const FrameId leaf, Pose& pose) const
 {
     return this->getPose(_robotBaseFrameId, leaf, pose);
@@ -173,58 +242,6 @@ void Crisp::addLeavesToExport()
 {
     for(int i = 0; i < _leaves.size(); i++)
         this->addLeafToExport(_leaves[i]);
-}
-
-int Crisp::getExportedPosesCount() const
-{
-    return _exportedPoses.size();
-}
-
-vector<string> Crisp::getExportedPosesIds() const
-{
-    vector<FrameId> names(this->getExportedPosesCount());
-    int i = 0;
-
-    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
-    {
-        names[i] = it->first;
-        i++;
-    }
-
-    return names;
-}
-
-int Crisp::getExportedPoses(vector<Pose>& poses) const
-{
-    int count = this->getExportedPosesCount();
-    poses.resize(count);
-
-    //cout << "Exported poses count : " << to_string(count) << endl;
-    int i = 0;
-    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
-    {
-        this->getPose(it->second.parent, it->second.child, poses[i]);
-        i++;
-    }
-
-    return count;
-}
-
-bool Crisp::addPoseToExport(const FrameId& parent, const FrameId& child)
-{
-    if(!this->containsPose(parent, child))
-        return false;
-
-    _exportedPoses.insert(std::pair<string, FrameIdPair>(getFrameIdPairString(parent, child), FrameIdPair(parent, child)));
-
-    return true;
-}
-
-bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
-{
-    if(!_exportedPoses.erase(getFrameIdPairString(parent, child)))
-        return false;
-    return true;
 }
 
 FrameId Crisp::getRobotBaseFrameId() const

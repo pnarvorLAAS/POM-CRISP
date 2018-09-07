@@ -25,8 +25,9 @@ struct FrameIdPair
     PositionManager::FrameId child;
 };
 
-std::string getFrameIdPairString(const PositionManager::Pose& pose);
-std::string getFrameIdPairString(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
+typedef std::string PoseId;
+PoseId getFrameIdPairString(const PositionManager::Pose& pose);
+PoseId getFrameIdPairString(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
     
 class Crisp
 {
@@ -46,8 +47,10 @@ class Crisp
 
     // Members allocated to poses to export
     int getExportedPosesCount() const;
-    std::vector<std::string> getExportedPosesIds() const;
+    std::vector<PositionManager::PoseId> getExportedPosesIds() const;
+    bool getExportedPose(PositionManager::PoseId poseId, PositionManager::Pose& pose) const;
     int getExportedPoses(std::vector<PositionManager::Pose>& poses) const;
+
     bool addPoseToExport(const PositionManager::FrameId& parent,
                          const PositionManager::FrameId& child);
     bool removePoseFromExport(const PositionManager::FrameId& parent,
@@ -74,8 +77,7 @@ class Crisp
     PositionManager::Graph _robotGraph;
     PositionManager::FrameId _robotBaseFrameId;
     std::vector<PositionManager::FrameId> _leaves;
-    std::map<std::string, FrameIdPair> _exportedPoses;
-
+    std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _exportedPoses;
 
     JointMap _movableJoints;
 
