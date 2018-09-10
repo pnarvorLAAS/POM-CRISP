@@ -15,20 +15,6 @@
 namespace PositionManager
 {
 
-struct FrameIdPair
-{
-    FrameIdPair(PositionManager::FrameId p = PositionManager::FrameId("parent"),
-                PositionManager::FrameId c = PositionManager::FrameId("child")) :
-        parent(p), child(c) {}
-
-    PositionManager::FrameId parent;
-    PositionManager::FrameId child;
-};
-
-typedef std::string PoseId;
-PoseId getFrameIdPairString(const PositionManager::Pose& pose);
-PoseId getFrameIdPairString(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
-    
 class Crisp
 {
     public:
@@ -77,7 +63,9 @@ class Crisp
     PositionManager::Graph _robotGraph;
     PositionManager::FrameId _robotBaseFrameId;
     std::vector<PositionManager::FrameId> _leaves;
-    std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _exportedPoses;
+
+    std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _inputPoses;
+    std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _outPutPoses;
 
     JointMap _movableJoints;
 

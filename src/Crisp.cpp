@@ -5,16 +5,6 @@
 using namespace std;
 using namespace PositionManager;
 
-string getFrameIdPairString(const Pose& pose)
-{
-    return getFrameIdPairString(pose._parent, pose._child);
-}
-
-string getFrameIdPairString(const FrameId& parent, const FrameId& child)
-{
-    return parent + "->" + child;
-}
-
 Crisp::Crisp()
 {
     _robotBaseFrameId = "RobotBase";
@@ -38,7 +28,7 @@ int Crisp::fromURDF(string urdfFilename)
 
     _movableJoints = parser._movableJoints;
     
-    lockGraph();
+    this->lockGraph();
     
     _robotBaseFrameId = parser._rootFrameId;
     cout << "Root node is " << _robotBaseFrameId << endl;
@@ -65,9 +55,10 @@ int Crisp::fromURDF(string urdfFilename)
     }
     cout << "Done.\n" << endl;
 
+    this->unlockGraph();
+
     this->addLeavesToExport();
 
-    unlockGraph();
     return 1;
 }
 
@@ -97,7 +88,7 @@ int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose) cons
     this->lockGraph();
     try
     {
-        pose._tr = _robotGraph.getTransform(_robotBaseFrameId, child);
+        pose._tr = _robotGraph.getTransform(parent, child);
     }
     catch(exception& e)
     {
@@ -119,10 +110,17 @@ int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose) cons
 
 bool Crisp::containsPose(const FrameId& parent, const FrameId& child) const
 {
-    bool res = false;
+    bool res = true;
 
     this->lockGraph();
-    res = _robotGraph.containsEdge(parent, child);
+    try
+    {
+       _robotGraph.getTransform(parent, child);
+    }
+    catch(exception& e)
+    {
+        res = false;
+    }
     this->unlockGraph();
 
     return res;
@@ -194,14 +192,14 @@ bool Crisp::addPoseToExport(const FrameId& parent, const FrameId& child)
     if(!this->containsPose(parent, child))
         return false;
 
-    _exportedPoses.insert(std::pair<string, FrameIdPair>(getFrameIdPairString(parent, child), FrameIdPair(parent, child)));
+    _exportedPoses.insert(std::pair<string, FrameIdPair>(getPoseId(parent, child), FrameIdPair(parent, child)));
 
     return true;
 }
 
 bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
 {
-    if(!_exportedPoses.erase(getFrameIdPairString(parent, child)))
+    if(!_exportedPoses.erase(getPoseId(parent, child)))
         return false;
     return true;
 }
@@ -241,7 +239,10 @@ bool Crisp::removeLeafFromExport(const FrameId& leaf)
 void Crisp::addLeavesToExport()
 {
     for(int i = 0; i < _leaves.size(); i++)
-        this->addLeafToExport(_leaves[i]);
+    {
+        if(!this->addLeafToExport(_leaves[i]))
+            cout << "Unexpected behaviour. Nothing to do" << endl;
+    }
 }
 
 FrameId Crisp::getRobotBaseFrameId() const

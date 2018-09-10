@@ -56,3 +56,24 @@ int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bs
     return 1;
 }
 
+int CrispASN1::getExportedPose(const PositionManager::PoseId poseId, BitStream& bstream)
+{
+    PositionManager::Pose pose;
+    asn1SccTransformWithCovariance asnPose;
+    int errorCode;
+    flag res;
+
+    if(!this->getExportedPose(poseId, pose))
+        return 0;
+    toASN1SCC(pose, asnPose);
+
+    BitStream_Init(&bstream, bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
+    res = asn1SccTransformWithCovariance_Encode(&asnPose, &bstream, &errorCode, TRUE);
+    if(!res)
+    {
+        cout << "error CrispASN1 : encoding error : " << errorCode << endl;
+        return 0;
+    }
+
+    return 1;
+}
