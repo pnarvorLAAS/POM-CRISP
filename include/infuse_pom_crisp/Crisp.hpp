@@ -52,7 +52,7 @@ class Crisp
 
     PositionManager::FrameId getRobotBaseFrameId() const;
 
-    JointMap getMovableJoints() const;
+    std::map<PositionManager::PoseId,PositionManager::FrameIdPair> getMovableJoints() const;
     int getMovableJointsCount() const;
 
     //TO BE REMOVED NOT THREAD SAFE. DO NOT USE IF NOT NECESSARY
@@ -65,9 +65,7 @@ class Crisp
     std::vector<PositionManager::FrameId> _leaves;
 
     std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _inputPoses;
-    std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _outPutPoses;
-
-    JointMap _movableJoints;
+    std::map<PositionManager::PoseId, PositionManager::FrameIdPair> _outputPoses;
 
     // grab and release mutex, wrapped for convenience
     void lockGraph() const; 

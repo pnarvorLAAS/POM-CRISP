@@ -26,7 +26,7 @@ int Crisp::fromURDF(string urdfFilename)
     }
     cout << "Parsing susccessfull" << endl;
 
-    _movableJoints = parser._movableJoints;
+    _inputPoses = parser._movableJoints;
     
     this->lockGraph();
     
@@ -137,7 +137,7 @@ int Crisp::copyRobotGraph(Graph& dest)
 
 int Crisp::getExportedPosesCount() const
 {
-    return _exportedPoses.size();
+    return _outputPoses.size();
 }
 
 vector<PoseId> Crisp::getExportedPosesIds() const
@@ -145,7 +145,7 @@ vector<PoseId> Crisp::getExportedPosesIds() const
     vector<FrameId> names(this->getExportedPosesCount());
     int i = 0;
 
-    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
+    for(map<string, FrameIdPair>::const_iterator it = _outputPoses.begin(); it != _outputPoses.end(); ++it)
     {
         names[i] = it->first;
         i++;
@@ -160,7 +160,7 @@ bool Crisp::getExportedPose(PositionManager::PoseId poseId, PositionManager::Pos
 
     try
     {
-        pair = _exportedPoses.at(poseId);
+        pair = _outputPoses.at(poseId);
     }
     catch(exception e)
     {
@@ -178,7 +178,7 @@ int Crisp::getExportedPoses(vector<Pose>& poses) const
 
     //cout << "Exported poses count : " << to_string(count) << endl;
     int i = 0;
-    for(map<string, FrameIdPair>::const_iterator it = _exportedPoses.begin(); it != _exportedPoses.end(); ++it)
+    for(map<string, FrameIdPair>::const_iterator it = _outputPoses.begin(); it != _outputPoses.end(); ++it)
     {
         this->getPose(it->second.parent, it->second.child, poses[i]);
         i++;
@@ -192,14 +192,14 @@ bool Crisp::addPoseToExport(const FrameId& parent, const FrameId& child)
     if(!this->containsPose(parent, child))
         return false;
 
-    _exportedPoses.insert(std::pair<string, FrameIdPair>(getPoseId(parent, child), FrameIdPair(parent, child)));
+    _outputPoses.insert(std::pair<string, FrameIdPair>(getPoseId(parent, child), FrameIdPair(parent, child)));
 
     return true;
 }
 
 bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
 {
-    if(!_exportedPoses.erase(getPoseId(parent, child)))
+    if(!_outputPoses.erase(getPoseId(parent, child)))
         return false;
     return true;
 }
@@ -224,14 +224,14 @@ bool Crisp::addLeafToExport(const FrameId& leaf)
     if(!this->containsPose(_robotBaseFrameId, leaf))
         return false;
 
-    _exportedPoses.insert(std::pair<string, FrameIdPair>(leaf, FrameIdPair(_robotBaseFrameId, leaf)));
+    _outputPoses.insert(std::pair<string, FrameIdPair>(leaf, FrameIdPair(_robotBaseFrameId, leaf)));
 
     return true;
 }
 
 bool Crisp::removeLeafFromExport(const FrameId& leaf)
 {
-    if(!_exportedPoses.erase(leaf))
+    if(!_outputPoses.erase(leaf))
         return false;
     return true;
 }
@@ -250,14 +250,14 @@ FrameId Crisp::getRobotBaseFrameId() const
     return this->_robotBaseFrameId;
 }
 
-JointMap Crisp::getMovableJoints() const
+std::map<PositionManager::PoseId,PositionManager::FrameIdPair> Crisp::getMovableJoints() const
 {
-    return _movableJoints;
+    return _inputPoses;
 }
 
 int Crisp::getMovableJointsCount() const
 {
-    return _movableJoints.size();
+    return _inputPoses.size();
 }
 
 // TO BE REMOVED NOT THREAD SAFE.
