@@ -8,6 +8,7 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <sys/time.h>
 
 #include <infuse_pom_base/PositionManagerBase.hpp>
 #include <infuse_pom_base/UrdfParser.hpp>

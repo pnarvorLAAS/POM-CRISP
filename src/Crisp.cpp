@@ -18,6 +18,10 @@ int Crisp::fromURDF(string urdfFilename)
 {
     UrdfParser parser;
 
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    int64_t timeUs = (int64_t)tv.tv_sec*base::Time::UsecPerSec + tv.tv_usec;
+
     cout << "Parsing URDF " << urdfFilename << endl;
     if(!parser.parseURDF(urdfFilename))
     {
@@ -39,6 +43,7 @@ int Crisp::fromURDF(string urdfFilename)
     }
     for(list<Pose>::iterator it = parser._poses.begin(); it != parser._poses.end(); ++it)
     {
+        it->_tr.time.microseconds = timeUs;
         _robotGraph.addTransform(it->_parent, it->_child, it->_tr);
     }
 
