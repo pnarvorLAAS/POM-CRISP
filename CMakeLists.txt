@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 # Set variables:
 #   * PROJECT_NAME
 #   * PROJECT_VERSION
-project(infuse_pom_crisp VERSION 0.1.1)
+project(infuse_pom_crisp VERSION 0.1.2)
 
 set(CMAKE_CXX_STANDARD 11)
 set(PKG_DESCRIPTION "CRISP: Common Robot Internal State Publisher")
