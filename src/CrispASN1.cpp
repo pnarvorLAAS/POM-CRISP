@@ -4,7 +4,8 @@ using namespace std;
 using namespace PositionManager;
 
 CrispASN1::CrispASN1()
-{}
+{
+}
 
 int CrispASN1::updateJointPose(const asn1SccTransformWithCovariance& asnPose)
 {
@@ -34,7 +35,7 @@ int CrispASN1::updateJointPose(BitStream bstream)
     return this->updateJointPose(asnPose);
 }
 
-int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream)
+int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream) const
 {
     PositionManager::Pose pose;
     asn1SccTransformWithCovariance asnPose;
@@ -44,6 +45,13 @@ int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bs
     if(!this->getLeafPose(frameId, pose))
         return 0;
     toASN1SCC(pose, asnPose);
+    asnPose.metadata.dataEstimated.arr[0] = 1;
+    asnPose.metadata.dataEstimated.arr[1] = 1;
+    asnPose.metadata.dataEstimated.arr[2] = 1;
+    asnPose.metadata.dataEstimated.arr[3] = 1;
+    asnPose.metadata.dataEstimated.arr[4] = 1;
+    asnPose.metadata.dataEstimated.arr[5] = 1;
+    asnPose.metadata.dataEstimated.arr[6] = 1;
 
     BitStream_Init(&bstream, bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
     res = asn1SccTransformWithCovariance_Encode(&asnPose, &bstream, &errorCode, TRUE);
@@ -56,7 +64,7 @@ int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bs
     return 1;
 }
 
-int CrispASN1::getExportedPose(const PositionManager::PoseId poseId, BitStream& bstream)
+int CrispASN1::getExportedPose(const PositionManager::PoseId poseId, BitStream& bstream) const
 {
     PositionManager::Pose pose;
     asn1SccTransformWithCovariance asnPose;
@@ -66,6 +74,13 @@ int CrispASN1::getExportedPose(const PositionManager::PoseId poseId, BitStream& 
     if(!this->getExportedPose(poseId, pose))
         return 0;
     toASN1SCC(pose, asnPose);
+    asnPose.metadata.dataEstimated.arr[0] = 1;
+    asnPose.metadata.dataEstimated.arr[1] = 1;
+    asnPose.metadata.dataEstimated.arr[2] = 1;
+    asnPose.metadata.dataEstimated.arr[3] = 1;
+    asnPose.metadata.dataEstimated.arr[4] = 1;
+    asnPose.metadata.dataEstimated.arr[5] = 1;
+    asnPose.metadata.dataEstimated.arr[6] = 1;
 
     BitStream_Init(&bstream, bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
     res = asn1SccTransformWithCovariance_Encode(&asnPose, &bstream, &errorCode, TRUE);

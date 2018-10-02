@@ -20,8 +20,8 @@ class CrispASN1 : public Crisp
     int updateJointPose(const asn1SccTransformWithCovariance& pose); 
     int updateJointPose(BitStream bstream);
 
-    int getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream);
-    int getExportedPose(const PositionManager::PoseId poseId, BitStream& bstream);
+    int getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream) const;
+    int getExportedPose(const PositionManager::PoseId poseId, BitStream& bstream) const;
 };
 
 };
