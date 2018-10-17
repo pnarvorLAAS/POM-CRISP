@@ -37,11 +37,13 @@ if (WITH_ASN1)
 
 
     set(SOURCES 
+        src/KinematicChain.cpp
         src/Crisp.cpp
         src/CrispASN1.cpp
         )
 
     set(HEADERS
+        include/infuse_pom_crisp/KinematicChain.hpp
         include/infuse_pom_crisp/Crisp.hpp
         include/infuse_pom_crisp/CrispASN1.hpp
         )
@@ -66,10 +68,12 @@ else()
     message(STATUS "\n\n[ATTENTION] You're currently compiling CRISP without ASN.1 support. You wil need to code your own network interface in order to communicate with CRISP \n\n")
 
     set(SOURCES 
+        src/KinematicChain.cpp
         src/Crisp.cpp
         )
 
     set(HEADERS
+        include/infuse_pom_crisp/KinematicChain.hpp
         include/infuse_pom_crisp/Crisp.hpp
         )
     

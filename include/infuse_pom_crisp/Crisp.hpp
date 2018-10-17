@@ -13,6 +13,8 @@
 #include <infuse_pom_base/PositionManagerBase.hpp>
 #include <infuse_pom_base/UrdfParser.hpp>
 
+#include "KinematicChain.hpp"
+
 namespace PositionManager
 {
 
