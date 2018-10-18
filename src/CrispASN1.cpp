@@ -3,22 +3,88 @@
 using namespace std;
 using namespace PositionManager;
 
+
+BitStreamedPose::BitStreamedPose(const FrameId& parent, const FrameId& child) :
+    _parent(parent),
+    _child(child),
+    _asnPose(new asn1SccTransformWithCovariance)
+{
+    BitStream_Init(&_bstream, new uint8_t[asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING], asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
+}
+
+BitStreamedPose::BitStreamedPose(const BitStreamedPose& pose) :
+    _parent(pose._parent),
+    _child(pose._child),
+    _asnPose(new asn1SccTransformWithCovariance)
+{
+    memcpy(_asnPose.get(), pose._asnPose.get(), asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
+    BitStream_Init(&_bstream, new uint8_t[asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING], asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
+    memcpy(_bstream.buf, pose._bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
+}
+
+BitStreamedPose::~BitStreamedPose()
+{
+    delete[] _bstream.buf;
+}
+
+void BitStreamedPose::encode(const PositionManager::Pose& pose)
+{
+    int errorCode;
+    flag res;
+
+    toASN1SCC(pose, *_asnPose);
+    _asnPose->metadata.dataEstimated.arr[0] = 1;
+    _asnPose->metadata.dataEstimated.arr[1] = 1;
+    _asnPose->metadata.dataEstimated.arr[2] = 1;
+    _asnPose->metadata.dataEstimated.arr[3] = 1;
+    _asnPose->metadata.dataEstimated.arr[4] = 1;
+    _asnPose->metadata.dataEstimated.arr[5] = 1;
+    _asnPose->metadata.dataEstimated.arr[6] = 1;
+
+    _bstream.currentByte = 0;
+    _bstream.currentBit = 0;
+    res = asn1SccTransformWithCovariance_Encode(_asnPose.get(), &_bstream, &errorCode, TRUE);
+    if(!res)
+        std::cout << "error, asn1SccTransformWithCovariance encoding error : " << errorCode << std::endl;
+}
+
+void BitStreamedPose::decode() const
+{
+    flag res;
+    int errorCode;
+
+    _bstream.currentByte = 0;
+    _bstream.currentBit = 0;
+    res = asn1SccTransformWithCovariance_Decode(_asnPose.get(), &_bstream, &errorCode);
+    if(!res)
+        std::cout << "error, asn1SccTransformWithCovariance decoding error : " << errorCode << std::endl;
+}
+
+PositionManager::Pose BitStreamedPose::getPose() const
+{
+    Pose res;
+
+    this->decode();
+    fromASN1SCC(*_asnPose, res);
+
+    return res;
+}
+
 CrispASN1::CrispASN1()
 {
 }
 
-int CrispASN1::updateJointPose(const asn1SccTransformWithCovariance& asnPose)
+int CrispASN1::updatePose(const asn1SccTransformWithCovariance& asnPose)
 {
     PositionManager::Pose pose;
    
     fromASN1SCC(asnPose, pose);
 
     //cout << "Got pose :" << endl << pose.toStringVerbose() << endl << endl;
-
-    return this->updateJointPose(pose);
+    return this->updatePose(pose);
 }
 
-int CrispASN1::updateJointPose(BitStream bstream)
+int CrispASN1::updatePose(BitStream bstream)
 {
     asn1SccTransformWithCovariance asnPose;
     flag res;
@@ -28,21 +94,19 @@ int CrispASN1::updateJointPose(BitStream bstream)
     bstream.currentBit = 0;
     res = asn1SccTransformWithCovariance_Decode(&asnPose, &bstream, &errorCode);
     if(!res)
-    {
         cout << "error CrispASN1 : decoding error : " << errorCode << endl;
-    }
 
-    return this->updateJointPose(asnPose);
+    return this->updatePose(asnPose);
 }
 
-int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bstream) const
+int CrispASN1::getPose(const PositionManager::FrameId& parent, const PositionManager::FrameId& child, BitStream& bstream) const
 {
     PositionManager::Pose pose;
     asn1SccTransformWithCovariance asnPose;
     int errorCode;
     flag res;
 
-    if(!this->getLeafPose(frameId, pose))
+    if(!this->getPose(parent, child, pose))
         return 0;
     toASN1SCC(pose, asnPose);
     asnPose.metadata.dataEstimated.arr[0] = 1;
@@ -64,31 +128,37 @@ int CrispASN1::getLeafPose(const PositionManager::FrameId frameId, BitStream& bs
     return 1;
 }
 
-int CrispASN1::getExportedPose(const PositionManager::PoseId poseId, BitStream& bstream) const
+void CrispASN1::getCachedPoses(std::vector<BitStreamedPose>& poses)
 {
-    PositionManager::Pose pose;
-    asn1SccTransformWithCovariance asnPose;
-    int errorCode;
-    flag res;
+    static vector<Pose> posesTmp;
 
-    if(!this->getExportedPose(poseId, pose))
-        return 0;
-    toASN1SCC(pose, asnPose);
-    asnPose.metadata.dataEstimated.arr[0] = 1;
-    asnPose.metadata.dataEstimated.arr[1] = 1;
-    asnPose.metadata.dataEstimated.arr[2] = 1;
-    asnPose.metadata.dataEstimated.arr[3] = 1;
-    asnPose.metadata.dataEstimated.arr[4] = 1;
-    asnPose.metadata.dataEstimated.arr[5] = 1;
-    asnPose.metadata.dataEstimated.arr[6] = 1;
+    this->getCachedPoses(posesTmp);
 
-    BitStream_Init(&bstream, bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
-    res = asn1SccTransformWithCovariance_Encode(&asnPose, &bstream, &errorCode, TRUE);
-    if(!res)
+    if(poses.size() < posesTmp.size())
+        poses.resize(posesTmp.size());
+
+    for(int i = 0; i < poses.size(); i++)
+        poses[i].encode(posesTmp[i]);
+}
+
+int CrispASN1::getLatestCachedPoses(std::vector<BitStreamedPose>& poses)
+{
+    static vector<Pose> posesTmp;
+    static vector<char> wasUpdated;
+    int nbPoses = 0;
+
+    this->getCachedPoses(posesTmp, wasUpdated);
+    for(int i = 0; i < wasUpdated.size(); i++)
     {
-        cout << "error CrispASN1 : encoding error : " << errorCode << endl;
-        return 0;
+        if(wasUpdated[i] != 0)
+            nbPoses++;
     }
 
-    return 1;
+    if(poses.size() < nbPoses)
+        poses.resize(nbPoses);
+
+    for(int i = 0; i < poses.size(); i++)
+        poses[i].encode(posesTmp[i]);
+
+    return nbPoses;
 }

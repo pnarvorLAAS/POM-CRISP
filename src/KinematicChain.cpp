@@ -7,8 +7,14 @@ typedef std::list<const PositionManager::Transform*> PosePtrList;
 
 KinematicChain::KinematicChain(const FrameId& parent,  const FrameId& child) :
     _composed(parent, child, PositionManager::identityTransform()),
-    _lastInsertedType(NONE)
+    _lastInsertedType(NONE),
+    _outdated(true)
 {
+}
+
+void KinematicChain::setOutdated() const
+{
+    _outdated = true;
 }
 
 void KinematicChain::update() const
@@ -22,6 +28,18 @@ void KinematicChain::update() const
 
 PositionManager::Pose KinematicChain::getPose() const
 {
+    if(_outdated)
+        this->update();
+    return _composed;
+}
+
+PositionManager::Pose KinematicChain::getPose(char& wasUpDated) const
+{
+    if(_outdated)
+    {
+        this->update();
+        wasUpDated = 1;
+    }
     return _composed;
 }
 

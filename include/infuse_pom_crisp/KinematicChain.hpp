@@ -17,16 +17,19 @@ class KinematicChain
 
     std::list<const PositionManager::Transform*> _chain;
     std::list<PositionManager::Transform> _cachedFixedTransform;
-    TransformType _lastInsertedType;
 
     mutable PositionManager::Pose _composed;
+    TransformType _lastInsertedType;
+    mutable bool _outdated;
 
     public:
 
     KinematicChain(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
 
+    void setOutdated() const;
     void update() const;
     PositionManager::Pose getPose() const;
+    PositionManager::Pose getPose(char& wasUpDated) const;
     PositionManager::FrameId getParent() const;
     PositionManager::FrameId getChild() const;
 

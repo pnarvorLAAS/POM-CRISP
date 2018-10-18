@@ -88,10 +88,7 @@ int Crisp::updatePose(const Pose& pose)
         }
 
         _robotGraph.updateTransform(edge, pose._tr);
-        pair<Transform, ChainPtrList>* it1 = &_inputPoses.at(edge);
-        it1->first = pose._tr;
-        for(ChainPtrList::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
-            (*it2)->update();
+        this->updateCache(edge, pose);
     }
     catch(exception& e)
     {
@@ -225,6 +222,22 @@ void Crisp::removePoseFromCache(const FrameId& parent, const FrameId& child)
     }
 }
 
+int Crisp::updateCache(const EdgeDescriptor& edge, const Pose& pose)
+{
+    try
+    {
+        pair<Transform, ChainPtrList>* it1 = &_inputPoses.at(edge);
+        it1->first = pose._tr;
+        for(ChainPtrList::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
+            (*it2)->setOutdated();
+    }
+    catch(exception& e)
+    {
+        return 0;
+    }
+    return 1;
+}
+
 void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses)
 {
     poses.resize(_cachedPoses.size());
@@ -235,6 +248,23 @@ void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses)
         if(it == _cachedPoses.end())
             throw runtime_error("Crisp::getCachedPoses : fatal error");
         poses[i] = it->getPose();
+        it = std::next(it);
+    }
+}
+
+void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses, vector<char>& wasUpdated)
+{
+    if(poses.size() < _cachedPoses.size())
+        poses.resize(_cachedPoses.size());
+    if(wasUpdated.size() < _cachedPoses.size())
+        wasUpdated.resize(_cachedPoses.size());
+
+    ChainList::iterator it = _cachedPoses.begin();
+    for(int i = 0; i < poses.size(); i++)
+    {
+        if(it == _cachedPoses.end())
+            throw runtime_error("Crisp::getCachedPoses : fatal error");
+        poses[i] = it->getPose(wasUpdated[i]);
         it = std::next(it);
     }
 }
