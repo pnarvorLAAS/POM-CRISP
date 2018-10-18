@@ -51,7 +51,7 @@ int Crisp::fromURDF(string urdfFilename)
         {
             edge = _robotGraph.getEdge(it->parent, it->child);
             tr = _robotGraph.getTransform(edge);
-            _inputPoses.insert(MovablePoseRegisterEl(edge, pair<Transform, ChainPtrList>(tr, ChainPtrList())));
+            _inputPoses.insert(MovablePoseRegisterEl(edge, pair<Pose, ChainPtrList>(Pose(it->parent, it->child, tr), ChainPtrList())));
         }
         catch(exception& e)
         {
@@ -68,8 +68,6 @@ int Crisp::fromURDF(string urdfFilename)
     cout << "Done.\n" << endl;
 
     this->unlockGraph();
-
-    //this->addLeavesToExport();
 
     return 1;
 }
@@ -153,6 +151,22 @@ bool Crisp::isMovable(const FrameId& parent, const FrameId& child)
     return true;
 }
 
+int Crisp::getMovableJoints(std::vector<FrameIdPair>& poses)
+{
+    if(poses.size() < _inputPoses.size())
+        poses.resize(_inputPoses.size());
+    
+    MovablePoseRegister::iterator it = _inputPoses.begin();
+    for(int i = 0; i < _inputPoses.size(); i++)
+    {
+        if(it == _inputPoses.end())
+            throw runtime_error("Crisp::getMovableJoints : fatal error");
+        poses[i] = FrameIdPair(it->second.first._parent, it->second.first._child);
+    }
+
+    return _inputPoses.size();
+}
+
 int Crisp::copyRobotGraph(Graph& dest)
 {
     this->lockGraph();
@@ -180,10 +194,10 @@ Crisp::ChainList::iterator Crisp::findCached(const FrameId& parent, const FrameI
     return it;
 }
 
-void Crisp::addPoseToCache(const FrameId& parent, const FrameId& child)
+bool Crisp::addPoseToCache(const FrameId& parent, const FrameId& child)
 {
-    if(isCached(parent,child))
-        return;
+    if(isCached(parent,child) || !containsPose(parent, child))
+        return false;
 
     _cachedPoses.push_back(KinematicChain(parent, child));
     ChainList::iterator chain = std::prev(_cachedPoses.end());
@@ -199,12 +213,14 @@ void Crisp::addPoseToCache(const FrameId& parent, const FrameId& child)
         }
         else
         {
-            chain->pushFloatingTransform(&(it->second.first));
+            chain->pushFloatingTransform(&(it->second.first._tr));
             it->second.second.push_back(&(*chain));
         }
     }
 
     chain->update();
+
+    return true;
 }
 
 void Crisp::removePoseFromCache(const FrameId& parent, const FrameId& child)
@@ -226,8 +242,8 @@ int Crisp::updateCache(const EdgeDescriptor& edge, const Pose& pose)
 {
     try
     {
-        pair<Transform, ChainPtrList>* it1 = &_inputPoses.at(edge);
-        it1->first = pose._tr;
+        pair<Pose, ChainPtrList>* it1 = &_inputPoses.at(edge);
+        it1->first._tr = pose._tr;
         for(ChainPtrList::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
             (*it2)->setOutdated();
     }

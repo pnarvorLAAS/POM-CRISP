@@ -25,8 +25,8 @@ class Crisp
 {
     typedef std::list<KinematicChain> ChainList;
     typedef std::list<const KinematicChain*> ChainPtrList;
-    typedef std::map<EdgeDescriptor, std::pair<PositionManager::Transform, ChainPtrList>> MovablePoseRegister;
-    typedef std::pair<EdgeDescriptor, std::pair<PositionManager::Transform, ChainPtrList>> MovablePoseRegisterEl;
+    typedef std::map<EdgeDescriptor, std::pair<PositionManager::Pose, ChainPtrList>> MovablePoseRegister;
+    typedef std::pair<EdgeDescriptor, std::pair<PositionManager::Pose, ChainPtrList>> MovablePoseRegisterEl;
 
     protected:
 
@@ -43,7 +43,7 @@ class Crisp
 
     bool isCached(const FrameId& parent, const FrameId& child);
     ChainList::iterator findCached(const FrameId& parent, const FrameId& child);
-    void addPoseToCache(const FrameId& parent, const FrameId& child);
+    bool addPoseToCache(const FrameId& parent, const FrameId& child);
     void removePoseFromCache(const FrameId& parent, const FrameId& child);
     int updateCache(const EdgeDescriptor& edge, const PositionManager::Pose& pose);
 
@@ -62,6 +62,7 @@ class Crisp
                       const PositionManager::FrameId& child) const;
 
     bool isMovable(const FrameId& parent, const FrameId& child);
+    int getMovableJoints(std::vector<FrameIdPair>& poses);
     void getCachedPoses(std::vector<PositionManager::Pose>& poses);
     void getCachedPoses(std::vector<PositionManager::Pose>& poses, std::vector<char>& wasUpDated);
 
