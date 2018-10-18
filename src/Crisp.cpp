@@ -16,12 +16,11 @@ Crisp::~Crisp()
 
 int Crisp::fromURDF(string urdfFilename)
 {
-    UrdfParser parser;
-
     struct timeval tv;
     gettimeofday(&tv, NULL);
     int64_t timeUs = (int64_t)tv.tv_sec*base::Time::UsecPerSec + tv.tv_usec;
 
+    UrdfParser parser;
     cout << "Parsing URDF " << urdfFilename << endl;
     if(!parser.parseURDF(urdfFilename))
     {
@@ -30,10 +29,7 @@ int Crisp::fromURDF(string urdfFilename)
     }
     cout << "Parsing susccessfull" << endl;
 
-    _inputPoses = parser._movableJoints;
-    
     this->lockGraph();
-    
     _robotBaseFrameId = parser._rootFrameId;
     cout << "Root node is " << _robotBaseFrameId << endl;
 
@@ -47,33 +43,55 @@ int Crisp::fromURDF(string urdfFilename)
         _robotGraph.addTransform(it->_parent, it->_child, it->_tr);
     }
 
+    EdgeDescriptor edge;
+    Transform tr;
+    for(list<FrameIdPair>::const_iterator it = parser._movableJoints.begin(); it != parser._movableJoints.end(); it++)
+    {
+        try
+        {
+            edge = _robotGraph.getEdge(it->parent, it->child);
+            tr = _robotGraph.getTransform(edge);
+            _inputPoses.insert(MovablePoseRegisterEl(edge, pair<Transform, ChainPtrList>(tr, ChainPtrList())));
+        }
+        catch(exception& e)
+        {
+            cout << "Caught exception, Crisp::fromURDF : " << e.what() << endl;
+            this->unlockGraph();
+            return 0;
+        }
+    }
+
     cout << "Checking leaf nodes... ";
     list<FrameId> leavesList = _robotGraph.getLeaves(&this->_robotBaseFrameId);
-    _leaves.resize(leavesList.size());
-    cout << to_string(_leaves.size()) << " leaves found : " << endl;
-    int i = 0;
     for(list<FrameId>::iterator it = leavesList.begin(); it != leavesList.end(); it++)
-    {
-        _leaves[i] = *it;
-        cout << _leaves[i] << endl;
-        i++;
-    }
+        this->addPoseToCache(_robotBaseFrameId, *it); 
     cout << "Done.\n" << endl;
 
     this->unlockGraph();
 
-    this->addLeavesToExport();
+    //this->addLeavesToExport();
 
     return 1;
 }
 
-int Crisp::updateJointPose(const Pose& pose)
+int Crisp::updatePose(const Pose& pose)
 {
     // TODO Handle Generic Exception
     this->lockGraph();
     try
     {
-        _robotGraph.updateTransform(pose._parent, pose._child, pose._tr);
+        EdgeDescriptor edge = _robotGraph.getEdge(pose._parent, pose._child);
+        if(_inputPoses.find(edge) == _inputPoses.end())
+        {
+            cout << pose._child << "->" << pose._parent << " is not registered as a movable pose : the attribute type in the .urdf is not set to \"floating\"" << endl;
+            return 0;
+        }
+
+        _robotGraph.updateTransform(edge, pose._tr);
+        pair<Transform, ChainPtrList>* it1 = &_inputPoses.at(edge);
+        it1->first = pose._tr;
+        for(ChainPtrList::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
+            (*it2)->update();
     }
     catch(exception& e)
     {
@@ -131,6 +149,13 @@ bool Crisp::containsPose(const FrameId& parent, const FrameId& child) const
     return res;
 }
 
+bool Crisp::isMovable(const FrameId& parent, const FrameId& child)
+{
+    if(_inputPoses.find(_robotGraph.getEdge(parent,child)) == _inputPoses.end())
+        return false;
+    return true;
+}
+
 int Crisp::copyRobotGraph(Graph& dest)
 {
     this->lockGraph();
@@ -140,129 +165,78 @@ int Crisp::copyRobotGraph(Graph& dest)
     return 1;
 }
 
-int Crisp::getExportedPosesCount() const
+
+bool Crisp::isCached(const FrameId& parent, const FrameId& child)
 {
-    return _outputPoses.size();
+    return this->findCached(parent,child) != _cachedPoses.end();
 }
 
-vector<PoseId> Crisp::getExportedPosesIds() const
+Crisp::ChainList::iterator Crisp::findCached(const FrameId& parent, const FrameId& child)
 {
-    vector<FrameId> names(this->getExportedPosesCount());
-    int i = 0;
-
-    for(map<string, FrameIdPair>::const_iterator it = _outputPoses.begin(); it != _outputPoses.end(); ++it)
+    ChainList::iterator it;
+    for(it = _cachedPoses.begin(); it != _cachedPoses.end(); it++)
     {
-        names[i] = it->first;
-        i++;
+        if(it->getParent() == parent && it->getChild() == child)
+            return it;
     }
 
-    return names;
+    return it;
 }
 
-bool Crisp::getExportedPose(PositionManager::PoseId poseId, PositionManager::Pose& pose) const
+void Crisp::addPoseToCache(const FrameId& parent, const FrameId& child)
 {
-    FrameIdPair pair; 
+    if(isCached(parent,child))
+        return;
 
-    try
-    {
-        pair = _outputPoses.at(poseId);
-    }
-    catch(exception e)
-    {
-        return false;
-    }
-    this->getPose(pair.parent, pair.child, pose);
-    
-    return true;
-}
+    _cachedPoses.push_back(KinematicChain(parent, child));
+    ChainList::iterator chain = std::prev(_cachedPoses.end());
 
-int Crisp::getExportedPoses(vector<Pose>& poses) const
-{
-    int count = this->getExportedPosesCount();
-    poses.resize(count);
-
-    //cout << "Exported poses count : " << to_string(count) << endl;
-    int i = 0;
-    for(map<string, FrameIdPair>::const_iterator it = _outputPoses.begin(); it != _outputPoses.end(); ++it)
+    Path path = *_robotGraph.getPath(parent, child, false);
+    for(int i = 0; i < path.getSize() - 1; i++)
     {
-        this->getPose(it->second.parent, it->second.child, poses[i]);
-        i++;
+        EdgeDescriptor edge = _robotGraph.getEdge(path[i],path[i+1]);
+        MovablePoseRegister::iterator it = _inputPoses.find(edge);
+        if(it == _inputPoses.end())
+        {
+            chain->pushFixedTransform(_robotGraph.getTransform(edge));
+        }
+        else
+        {
+            chain->pushFloatingTransform(&(it->second.first));
+            it->second.second.push_back(&(*chain));
+        }
     }
 
-    return count;
+    chain->update();
 }
 
-bool Crisp::addPoseToExport(const FrameId& parent, const FrameId& child)
+void Crisp::removePoseFromCache(const FrameId& parent, const FrameId& child)
 {
-    if(!this->containsPose(parent, child))
-        return false;
-
-    _outputPoses.insert(std::pair<string, FrameIdPair>(getPoseId(parent, child), FrameIdPair(parent, child)));
-
-    return true;
-}
-
-bool Crisp::removePoseFromExport(const FrameId& parent, const FrameId& child)
-{
-    if(!_outputPoses.erase(getPoseId(parent, child)))
-        return false;
-    return true;
-}
-
-int Crisp::getLeafPose(const FrameId leaf, Pose& pose) const
-{
-    return this->getPose(_robotBaseFrameId, leaf, pose);
-}
-
-int Crisp::getLeavesCount() const
-{
-    return _leaves.size();
-}
-
-vector<FrameId> Crisp::getLeavesFrameIds() const
-{
-    return _leaves;
-}
-
-bool Crisp::addLeafToExport(const FrameId& leaf)
-{
-    if(!this->containsPose(_robotBaseFrameId, leaf))
-        return false;
-
-    _outputPoses.insert(std::pair<string, FrameIdPair>(leaf, FrameIdPair(_robotBaseFrameId, leaf)));
-
-    return true;
-}
-
-bool Crisp::removeLeafFromExport(const FrameId& leaf)
-{
-    if(!_outputPoses.erase(leaf))
-        return false;
-    return true;
-}
-
-void Crisp::addLeavesToExport()
-{
-    for(int i = 0; i < _leaves.size(); i++)
+    ChainList::iterator chain = this->findCached(parent,child);
+    if(chain != _cachedPoses.end())
     {
-        if(!this->addLeafToExport(_leaves[i]))
-            cout << "Unexpected behaviour. Nothing to do" << endl;
+        for(MovablePoseRegister::iterator it = _inputPoses.begin(); it != _inputPoses.end(); it++)
+        {
+            ChainPtrList::iterator chain2 = std::find(it->second.second.begin(), it->second.second.end(), &(*chain));
+            if(chain2 != it->second.second.end())
+                it->second.second.erase(chain2);
+        }
+        _cachedPoses.erase(chain);
     }
 }
 
-FrameId Crisp::getRobotBaseFrameId() const
+void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses)
 {
-    return this->_robotBaseFrameId;
-}
+    poses.resize(_cachedPoses.size());
 
-std::map<PositionManager::PoseId,PositionManager::FrameIdPair> Crisp::getMovableJoints() const
-{
-    return _inputPoses;
-}
-
-int Crisp::getMovableJointsCount() const
-{
-    return _inputPoses.size();
+    ChainList::iterator it = _cachedPoses.begin();
+    for(int i = 0; i < poses.size(); i++)
+    {
+        if(it == _cachedPoses.end())
+            throw runtime_error("Crisp::getCachedPoses : fatal error");
+        poses[i] = it->getPose();
+        it = std::next(it);
+    }
 }
 
 // TO BE REMOVED NOT THREAD SAFE.

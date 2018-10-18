@@ -9,9 +9,15 @@
 namespace PositionManager
 {
 
-class KinematicChain : public std::list<const PositionManager::Transform*>
+class KinematicChain
 {
+    enum TransformType {NONE, FLOATING, FIXED};
+
     protected:
+
+    std::list<const PositionManager::Transform*> _chain;
+    std::list<PositionManager::Transform> _cachedFixedTransform;
+    TransformType _lastInsertedType;
 
     mutable PositionManager::Pose _composed;
 
@@ -20,7 +26,12 @@ class KinematicChain : public std::list<const PositionManager::Transform*>
     KinematicChain(const PositionManager::FrameId& parent, const PositionManager::FrameId& child);
 
     void update() const;
-    PositionManager::Pose getTransform() const;
+    PositionManager::Pose getPose() const;
+    PositionManager::FrameId getParent() const;
+    PositionManager::FrameId getChild() const;
+
+    void pushFixedTransform(const PositionManager::Transform& tr);
+    void pushFloatingTransform(const PositionManager::Transform* tr);
 };
 
 };
