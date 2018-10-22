@@ -2,6 +2,7 @@
 #define DEF_POSITIONMANAGER_CRISPASN1_H
 
 #include <infuse_pom_crisp/Crisp.hpp>
+#include <infuse_asn1_conversions/asn1_base_conversions.hpp>
 #include <infuse_asn1_conversions/asn1_pom_conversions.hpp>
 
 namespace PositionManager
@@ -43,8 +44,8 @@ class CrispASN1 : public Crisp
     int updatePose(BitStream bstream);
     
     int getPose(const FrameId& parent, const FrameId& child, BitStream& bstream) const;
-    void getCachedPoses(std::vector<BitStreamedPose>& poses);
-    int  getLatestCachedPoses(std::vector<BitStreamedPose>& poses);
+    int getCachedPoses(std::vector<BitStreamedPose>& poses);
+    int getLatestCachedPoses(std::vector<BitStreamedPose>& poses);
 };
 
 };

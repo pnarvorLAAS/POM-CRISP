@@ -33,8 +33,8 @@ class KinematicChain
     PositionManager::FrameId getParent() const;
     PositionManager::FrameId getChild() const;
 
-    void pushFixedTransform(const PositionManager::Transform& tr);
-    void pushFloatingTransform(const PositionManager::Transform* tr);
+    void pushTransform(const PositionManager::Transform& tr);
+    void pushTransform(const PositionManager::Transform* tr);
 };
 
 };

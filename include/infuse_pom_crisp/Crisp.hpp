@@ -43,7 +43,6 @@ class Crisp
 
     bool isCached(const FrameId& parent, const FrameId& child);
     ChainList::iterator findCached(const FrameId& parent, const FrameId& child);
-    bool addPoseToCache(const FrameId& parent, const FrameId& child);
     void removePoseFromCache(const FrameId& parent, const FrameId& child);
     int updateCache(const EdgeDescriptor& edge, const PositionManager::Pose& pose);
 
@@ -63,8 +62,10 @@ class Crisp
 
     bool isMovable(const FrameId& parent, const FrameId& child);
     int getMovableJoints(std::vector<FrameIdPair>& poses);
-    void getCachedPoses(std::vector<PositionManager::Pose>& poses);
-    void getCachedPoses(std::vector<PositionManager::Pose>& poses, std::vector<char>& wasUpDated);
+
+    bool addPoseToCache(const FrameId& parent, const FrameId& child);
+    int  getCachedPoses(std::vector<PositionManager::Pose>& poses);
+    int  getCachedPoses(std::vector<PositionManager::Pose>& poses, std::vector<char>& wasUpDated);
 
     ////TO BE REMOVED NOT THREAD SAFE. DO NOT USE IF NOT NECESSARY
     std::shared_ptr<envire::core::EnvireGraph> getRobotGraph();

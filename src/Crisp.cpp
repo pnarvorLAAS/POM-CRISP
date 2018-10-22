@@ -16,9 +16,8 @@ Crisp::~Crisp()
 
 int Crisp::fromURDF(string urdfFilename)
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    int64_t timeUs = (int64_t)tv.tv_sec*base::Time::UsecPerSec + tv.tv_usec;
+    int64_t timeUs = TimeManager::now();
+    cout << "Time : " << timeUs << endl;
 
     UrdfParser parser;
     cout << "Parsing URDF " << urdfFilename << endl;
@@ -44,14 +43,21 @@ int Crisp::fromURDF(string urdfFilename)
     }
 
     EdgeDescriptor edge;
-    Transform tr;
+    Pose p;
     for(list<FrameIdPair>::const_iterator it = parser._movableJoints.begin(); it != parser._movableJoints.end(); it++)
     {
         try
         {
+            p._parent = it->parent;
+            p._parentTime = timeUs;
+            p._child = it->child;
+            p._childTime = timeUs;
+            p._tr = _robotGraph.getTransform(it->parent, it->child);
+
+            //cout << "Inserting inputPose :\n" << p.toStringVerbose() << endl;
+           
             edge = _robotGraph.getEdge(it->parent, it->child);
-            tr = _robotGraph.getTransform(edge);
-            _inputPoses.insert(MovablePoseRegisterEl(edge, pair<Pose, ChainPtrList>(Pose(it->parent, it->child, tr), ChainPtrList())));
+            _inputPoses.insert(MovablePoseRegisterEl(edge, pair<Pose, ChainPtrList>(p, ChainPtrList())));
         }
         catch(exception& e)
         {
@@ -79,13 +85,14 @@ int Crisp::updatePose(const Pose& pose)
     try
     {
         EdgeDescriptor edge = _robotGraph.getEdge(pose._parent, pose._child);
-        if(_inputPoses.find(edge) == _inputPoses.end())
+        MovablePoseRegister::iterator it = _inputPoses.find(edge);
+        if(it == _inputPoses.end())
         {
             cout << pose._child << "->" << pose._parent << " is not registered as a movable pose : the attribute type in the .urdf is not set to \"floating\"" << endl;
             return 0;
         }
 
-        _robotGraph.updateTransform(edge, pose._tr);
+        _robotGraph.updateTransform(pose._parent, pose._child, pose._tr);
         this->updateCache(edge, pose);
     }
     catch(exception& e)
@@ -115,13 +122,7 @@ int Crisp::getPose(const FrameId& parent, const FrameId& child, Pose& pose) cons
         return 0;
     }
 
-    tval = TimeManager::now();
     this->unlockGraph();
-
-    pose._parent = parent;
-    pose._parentTime = tval;
-    pose._child = child;
-    pose._childTime = tval;
 
     return 1;
 }
@@ -199,6 +200,8 @@ bool Crisp::addPoseToCache(const FrameId& parent, const FrameId& child)
     if(isCached(parent,child) || !containsPose(parent, child))
         return false;
 
+    cout << "Adding " << child << "->" << parent << " to cache" << endl;
+
     _cachedPoses.push_back(KinematicChain(parent, child));
     ChainList::iterator chain = std::prev(_cachedPoses.end());
 
@@ -209,15 +212,14 @@ bool Crisp::addPoseToCache(const FrameId& parent, const FrameId& child)
         MovablePoseRegister::iterator it = _inputPoses.find(edge);
         if(it == _inputPoses.end())
         {
-            chain->pushFixedTransform(_robotGraph.getTransform(edge));
+            chain->pushTransform(_robotGraph.getTransform(path[i], path[i+1]));
         }
         else
         {
-            chain->pushFloatingTransform(&(it->second.first._tr));
+            chain->pushTransform(&(it->second.first._tr));
             it->second.second.push_back(&(*chain));
         }
     }
-
     chain->update();
 
     return true;
@@ -245,7 +247,10 @@ int Crisp::updateCache(const EdgeDescriptor& edge, const Pose& pose)
         pair<Pose, ChainPtrList>* it1 = &_inputPoses.at(edge);
         it1->first._tr = pose._tr;
         for(ChainPtrList::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
+        {
+            cout << "Setting outdated : " << (*it2)->getChild() << "->" << (*it2)->getParent() << endl;
             (*it2)->setOutdated();
+        }
     }
     catch(exception& e)
     {
@@ -254,21 +259,24 @@ int Crisp::updateCache(const EdgeDescriptor& edge, const Pose& pose)
     return 1;
 }
 
-void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses)
+int Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses)
 {
-    poses.resize(_cachedPoses.size());
+    if(poses.size() < _cachedPoses.size())
+        poses.resize(_cachedPoses.size());
 
     ChainList::iterator it = _cachedPoses.begin();
-    for(int i = 0; i < poses.size(); i++)
+    for(int i = 0; i < _cachedPoses.size(); i++)
     {
         if(it == _cachedPoses.end())
             throw runtime_error("Crisp::getCachedPoses : fatal error");
         poses[i] = it->getPose();
         it = std::next(it);
     }
+
+    return _cachedPoses.size();
 }
 
-void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses, vector<char>& wasUpdated)
+int Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses, vector<char>& wasUpdated)
 {
     if(poses.size() < _cachedPoses.size())
         poses.resize(_cachedPoses.size());
@@ -276,13 +284,15 @@ void Crisp::getCachedPoses(std::vector<PositionManager::Pose>& poses, vector<cha
         wasUpdated.resize(_cachedPoses.size());
 
     ChainList::iterator it = _cachedPoses.begin();
-    for(int i = 0; i < poses.size(); i++)
+    for(int i = 0; i < _cachedPoses.size(); i++)
     {
         if(it == _cachedPoses.end())
             throw runtime_error("Crisp::getCachedPoses : fatal error");
         poses[i] = it->getPose(wasUpdated[i]);
         it = std::next(it);
     }
+
+    return _cachedPoses.size();
 }
 
 // TO BE REMOVED NOT THREAD SAFE.
@@ -293,12 +303,12 @@ shared_ptr<envire::core::EnvireGraph> Crisp::getRobotGraph()
 
 inline void Crisp::lockGraph() const
 {
-    _graphAccessMutex.lock();
+    //_graphAccessMutex.lock();
 }
 
 inline void Crisp::unlockGraph() const
 {
-    _graphAccessMutex.unlock();
+    //_graphAccessMutex.unlock();
 }
 
 

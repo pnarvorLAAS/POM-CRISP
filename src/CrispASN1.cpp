@@ -33,6 +33,9 @@ void BitStreamedPose::encode(const PositionManager::Pose& pose)
     flag res;
 
     toASN1SCC(pose, *_asnPose);
+
+    toASN1SCC(string("CRISP"), _asnPose->metadata.producerId);
+
     _asnPose->metadata.dataEstimated.arr[0] = 1;
     _asnPose->metadata.dataEstimated.arr[1] = 1;
     _asnPose->metadata.dataEstimated.arr[2] = 1;
@@ -46,6 +49,9 @@ void BitStreamedPose::encode(const PositionManager::Pose& pose)
     res = asn1SccTransformWithCovariance_Encode(_asnPose.get(), &_bstream, &errorCode, TRUE);
     if(!res)
         std::cout << "error, asn1SccTransformWithCovariance encoding error : " << errorCode << std::endl;
+
+    _parent = pose._parent;
+    _child = pose._child;
 }
 
 void BitStreamedPose::decode() const
@@ -128,17 +134,26 @@ int CrispASN1::getPose(const PositionManager::FrameId& parent, const PositionMan
     return 1;
 }
 
-void CrispASN1::getCachedPoses(std::vector<BitStreamedPose>& poses)
+int CrispASN1::getCachedPoses(std::vector<BitStreamedPose>& poses)
 {
     static vector<Pose> posesTmp;
+    static vector<char> wasUpdated;
 
-    this->getCachedPoses(posesTmp);
+    int nbPoses = this->getCachedPoses(posesTmp, wasUpdated);
 
-    if(poses.size() < posesTmp.size())
-        poses.resize(posesTmp.size());
+    if(poses.size() < nbPoses)
+        poses.resize(nbPoses);
 
-    for(int i = 0; i < poses.size(); i++)
+    for(int i = 0; i < nbPoses; i++)
+    {
+        // Have to reencode each loop because order of poses not garanted
+        //cout << "Got pose :\n" << posesTmp[i].toStringVerbose() << endl;
         poses[i].encode(posesTmp[i]);
+    }
+
+    //cout << "Getting all poses : " << poses.size() << endl;
+
+    return poses.size();
 }
 
 int CrispASN1::getLatestCachedPoses(std::vector<BitStreamedPose>& poses)
@@ -157,8 +172,10 @@ int CrispASN1::getLatestCachedPoses(std::vector<BitStreamedPose>& poses)
     if(poses.size() < nbPoses)
         poses.resize(nbPoses);
 
-    for(int i = 0; i < poses.size(); i++)
+    for(int i = 0; i < nbPoses; i++)
         poses[i].encode(posesTmp[i]);
+
+    //cout << "Getting new poses : " << nbPoses << endl;
 
     return nbPoses;
 }
