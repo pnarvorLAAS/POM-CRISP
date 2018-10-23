@@ -44,8 +44,9 @@ void BitStreamedPose::encode(const PositionManager::Pose& pose)
     _asnPose->metadata.dataEstimated.arr[5] = 1;
     _asnPose->metadata.dataEstimated.arr[6] = 1;
 
-    _bstream.currentByte = 0;
-    _bstream.currentBit = 0;
+    //_bstream.currentByte = 0;
+    //_bstream.currentBit = 0;
+    BitStream_Init(&_bstream, _bstream.buf, asn1SccTransformWithCovariance_REQUIRED_BYTES_FOR_ENCODING);
     res = asn1SccTransformWithCovariance_Encode(_asnPose.get(), &_bstream, &errorCode, TRUE);
     if(!res)
         std::cout << "error, asn1SccTransformWithCovariance encoding error : " << errorCode << std::endl;
@@ -144,10 +145,11 @@ int CrispASN1::getCachedPoses(std::vector<BitStreamedPose>& poses)
     if(poses.size() < nbPoses)
         poses.resize(nbPoses);
 
+    //cout << "Updated pose :\n" << posesTmp[2].toStringVerbose() << endl;
     for(int i = 0; i < nbPoses; i++)
     {
         // Have to reencode each loop because order of poses not garanted
-        //cout << "Got pose :\n" << posesTmp[i].toStringVerbose() << endl;
+        //cout << "Updated pose :\n" << posesTmp[i].toStringVerbose() << endl;
         poses[i].encode(posesTmp[i]);
     }
 
@@ -172,8 +174,22 @@ int CrispASN1::getLatestCachedPoses(std::vector<BitStreamedPose>& poses)
     if(poses.size() < nbPoses)
         poses.resize(nbPoses);
 
-    for(int i = 0; i < nbPoses; i++)
-        poses[i].encode(posesTmp[i]);
+    int j = 0;
+    for(int i = 0; i < wasUpdated.size(); i++)
+    {
+        if(wasUpdated[i] != 0)
+        {
+            //cout << "Updated pose latest :\n" << posesTmp[i].toStringVerbose() << endl;
+            poses[j].encode(posesTmp[i]);
+            j++;
+        }
+    }
+
+    //for(int j = 0; j < nbPoses; j++)
+    //{
+    //    cout << "New pose :\n" << poses[j]._child << "->" << poses[j]._parent << endl;
+    //}
+    //cout << "\n" << endl;
 
     //cout << "Getting new poses : " << nbPoses << endl;
 

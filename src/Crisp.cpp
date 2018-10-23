@@ -91,7 +91,7 @@ int Crisp::updatePose(const Pose& pose)
             cout << pose._child << "->" << pose._parent << " is not registered as a movable pose : the attribute type in the .urdf is not set to \"floating\"" << endl;
             return 0;
         }
-
+        
         _robotGraph.updateTransform(pose._parent, pose._child, pose._tr);
         this->updateCache(edge, pose);
     }
@@ -248,7 +248,7 @@ int Crisp::updateCache(const EdgeDescriptor& edge, const Pose& pose)
         it1->first._tr = pose._tr;
         for(ChainPtrList::iterator it2 = it1->second.begin(); it2 != it1->second.end(); it2++)
         {
-            cout << "Setting outdated : " << (*it2)->getChild() << "->" << (*it2)->getParent() << endl;
+            //cout << "Setting outdated : " << (*it2)->getChild() << "->" << (*it2)->getParent() << endl;
             (*it2)->setOutdated();
         }
     }
