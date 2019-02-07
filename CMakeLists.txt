@@ -79,7 +79,7 @@ else()
     
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
     target_include_directories(${PROJECT_NAME} PRIVATE include/)
-    target_link_libraries (${PROJECT_NAME} infuse_envire infuse_pom_base)
+    target_link_libraries (${PROJECT_NAME} infuse_pom_base)
     set_target_properties (${PROJECT_NAME}
         PROPERTIES
             VERSION ${PROJECT_VERSION}
@@ -87,7 +87,7 @@ else()
             PUBLIC_HEADER "${HEADERS}"
     )
     
-    set(REQUIRED_COMPONENTS "infuse_envire, infuse_pom_base")
+    set(REQUIRED_COMPONENTS "infuse_pom_base")
     
 
 endif(WITH_ASN1)
